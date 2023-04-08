@@ -79,12 +79,12 @@ class TrainerGAN():
             self.opt_G = torch.optim.Adam(self.G.parameters(), lr=self.config["lr"], betas=(0.5, 0.999))
         elif self.config["model_type"] == "WGAN" :
             self.D = WGAN_Discriminator(3)            
-            self.opt_D = torch.optim.RMSprop(self.D.parameters(), lr=self.config["lr"], betas=(0.5, 0.999))
-            self.opt_G = torch.optim.RMSprop(self.G.parameters(), lr=self.config["lr"], betas=(0.5, 0.999))
+            self.opt_D = torch.optim.RMSprop(self.D.parameters(), lr=self.config["lr"], alpha= 0.99)
+            self.opt_G = torch.optim.RMSprop(self.G.parameters(), lr=self.config["lr"], alpha= 0.99)
         elif self.config["model_type"] == "WGAN_GP" :
+            self.D = WGAN_GP_Discriminator(3)
             self.opt_D = torch.optim.Adam(self.D.parameters(), lr=self.config["lr"], betas=(0.5, 0.999))
             self.opt_G = torch.optim.Adam(self.G.parameters(), lr=self.config["lr"], betas=(0.5, 0.999))
-            self.D = WGAN_GP_Discriminator(3)
         else:
             raise ValueError(f'unknown beta schedule {config["model_type"]}')
         
@@ -133,7 +133,7 @@ class TrainerGAN():
         # Get random interpolation between real and fake samples
         interpolates = (alpha * r_imgs + ((1 - alpha) * f_imgs)).requires_grad_(True)
         d_interpolates = self.D(interpolates)
-        fake = Variable(Tensor(r_imgs.shape[0], 1).fill_(1.0), requires_grad=False)
+        fake = Variable(Tensor(r_imgs.shape[0]).fill_(1.0), requires_grad=False)
         # Get gradient w.r.t. interpolates
         gradients = grad(
             outputs=d_interpolates,
@@ -252,7 +252,8 @@ class TrainerGAN():
             grid_img = torchvision.utils.make_grid(f_imgs_sample.cpu(), nrow=10)
             plt.figure(figsize=(10,10))
             plt.imshow(grid_img.permute(1, 2, 0))
-            plt.show()
+            plt.savefig("cur")
+            plt.close()
 
             self.G.train()
 
@@ -289,11 +290,16 @@ class TrainerGAN():
 
 
 config = {
-    "model_type": "GAN",
+    "model_type": "WGAN",
     "batch_size": 64,
     "lr": 1e-4,
     "n_epoch": 20,
     "n_critic": 1,
     "z_dim": 100,
     "workspace_dir": workspace_dir, # define in the environment setting
+    "clip_value" : 0.01
 }
+
+if __name__ == '__main__':
+    trainer = TrainerGAN(config)
+    trainer.train()

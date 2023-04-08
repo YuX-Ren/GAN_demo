@@ -127,7 +127,7 @@ class WGAN_GP_Discriminator(nn.Module):
     Output shape: (batch)
     """
     def __init__(self, in_dim, feature_dim=64):
-        super(WGAN_Discriminator, self).__init__()
+        super(WGAN_GP_Discriminator, self).__init__()
             
         #input: (batch, 3, 64, 64)
 
